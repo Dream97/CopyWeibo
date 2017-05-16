@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.copyweibo.Util.Constants;
@@ -19,18 +17,9 @@ import com.sina.weibo.sdk.net.RequestListener;
 import com.sina.weibo.sdk.openapi.UsersAPI;
 import com.sina.weibo.sdk.openapi.models.User;
 
-public class OAuthActivity extends AppCompatActivity implements View.OnClickListener {
+public class OAuthActivity extends AppCompatActivity{
 
-    //登录按钮
-    private Button btnSsoLogIn;
-    private Button btnWebLogIn;
-    private Button btnAllInOneLogIn;
-    //显示accessToken
-    private TextView tvAccessToken;
-    //用于显示用户具体信息的控件
-    private TextView tvNickName;
-    private TextView tvGender;
-    private TextView tvLocation;
+    String TAG = "OAuthActivity";
 
     /**
      * 注意：SsoHandler 仅当 SDK 支持 SSO 时有效
@@ -51,7 +40,7 @@ public class OAuthActivity extends AppCompatActivity implements View.OnClickList
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        //setContentView(R.layout.activity_login);
 
         // 快速授权时，请不要传入 SCOPE，否则可能会授权不成功
         mAuthInfo = new AuthInfo(this, Constants.APP_KEY, Constants.REDIRECT_URL, Constants.SCOPE);
@@ -61,59 +50,16 @@ public class OAuthActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void initView() {
-        btnSsoLogIn = (Button) findViewById(R.id.logIn_btn_SsoLogin);
-        btnSsoLogIn.setOnClickListener(this);
-        btnWebLogIn = (Button) findViewById(R.id.logIn_btn_WebLogin);
-        btnWebLogIn.setOnClickListener(this);
-        btnAllInOneLogIn = (Button) findViewById(R.id.logIn_btn_AllInOneLogin);
-        btnAllInOneLogIn.setOnClickListener(this);
-        tvAccessToken = (TextView) findViewById(R.id.logIN_tv_accessToken);
-
-        //用户信息
-        tvNickName = (TextView) findViewById(R.id.logIn_tv_nickName);
-        tvGender = (TextView) findViewById(R.id.logIn_tv_gender);
-        tvLocation = (TextView) findViewById(R.id.logIn_tv_location);
-
+        startAllInOneWeiBoLogIn();
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            //sso授权，仅客户端
-            case R.id.logIn_btn_SsoLogin:
-                startSsoWeiBoLogIn();
-                break;
-            //web授权
-            case R.id.logIn_btn_WebLogin:
-                startWebWeiBoLogIn();
-                break;
-            //自动检测，若有客户端，则用sso授权，若没有客户端则用web授权
-            case R.id.logIn_btn_AllInOneLogin:
-                startAllInOneWeiBoLogIn();
-                break;
-        }
-    }
+
 
     /**
      * all in one 方式授权，自动检测
      */
     private void startAllInOneWeiBoLogIn() {
         mSsoHandler.authorize(new AuthListener());
-    }
-
-    /**
-     * Web授权
-     */
-    private void startWebWeiBoLogIn() {
-        mSsoHandler.authorizeWeb(new AuthListener());
-    }
-
-    /**
-     * SSO授权，仅客户端
-     */
-    private void startSsoWeiBoLogIn() {
-        mSsoHandler.authorizeClientSso(new AuthListener());
-        //通过accessToken获取用户信息
     }
 
     /**
@@ -127,37 +73,21 @@ public class OAuthActivity extends AppCompatActivity implements View.OnClickList
 
         @Override
         public void onComplete(Bundle bundle) {
-//            System.out.println("onComplete(Bundle values)  ------>  "
-//                    + bundle.toString());
-            // onComplete(Bundle values) ------>
-            // Bundle[ {_weibo_transaction = 1469413517894,
-            // access_token = 2.00a64JBGyY87OCfa7707a82fzincGB,
-            // refresh_token = 2.00a64JBGyY87OC11c02519480EWT1g,
-            // expires_in = 2651682,
-            // _weibo_appPackage = com.sina.weibo,
-            // com.sina.weibo.intent.extra.NICK_NAME = 用户5513808278,
-            // userName = 用户5513808278,
-            // uid = 5513808278,
-            // com.sina.weibo.intent.extra.USER_ICON = null} ]
+
 
 
             //从Bundle中解析Token
             mAccessToken = Oauth2AccessToken.parseAccessToken(bundle);
-//            System.out.println("onComplete  mAccessToken  ------>  "
-//                    + mAccessToken.toString());
-            // onComplete mAccessToken ------>
-            // uid: 5513808278,
-            // access_token: 2.00a64JBGyY87OCfa7707a82fzincGB,
-            // refresh_token: 2.00a64JBGyY87OC11c02519480EWT1g,
-            // phone_num: ,
-            // expires_in: 1472065200534
-
             if (mAccessToken.isSessionValid()) {//授权成功
-                Toast.makeText(OAuthActivity.this, "登陆成功", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(OAuthActivity.this, "登陆成功", Toast.LENGTH_SHORT).show();
                 //显示Access_Token
-                tvAccessToken.setText("Access_token:\n" + mAccessToken.getToken());
+                Constants.token = mAccessToken.getToken();
                 //获取用户具体信息
                 getUserInfo();
+                Log.d(TAG, "onComplete: 获取信息成功");
+                Intent intent = new Intent(OAuthActivity.this,MainActivity.class);
+                startActivity(intent);
+                finish();
             } else {
                 /**
                  *  以下几种情况，您会收到 Code：
@@ -205,10 +135,9 @@ public class OAuthActivity extends AppCompatActivity implements View.OnClickList
             if (!TextUtils.isEmpty(response)) {
                 //调用User#parse将JSON串解析成User对象
                 User user = User.parse(response);
-                String nickName = user.screen_name;
-                tvNickName.setText("用户昵称： " + user.screen_name);
-                tvGender.setText("用户性别： " + user.gender);
-                tvLocation.setText("用户所在地： " + user.location);
+                Constants.name = user.screen_name;
+                Constants.gender = user.gender;
+                Constants.location = user.location;
 //                Toast.makeText(LogInActivity.this, "用户的昵称： " + nickName, Toast.LENGTH_SHORT).show();
             }
         }

@@ -27,4 +27,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.3.0'
     testCompile 'junit:junit:4.12'
     compile files('libs/weibosdk.jar')
+    compile 'com.ashokvarma.android:bottom-navigation-bar:1.4.1'
+    compile 'org.webjars.npm:material__toolbar:0.3.1'
 }

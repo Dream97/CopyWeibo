@@ -16,6 +16,7 @@
         </activity>
         <activity android:name=".OAuthActivity">
         </activity>
+        <activity android:name=".MainActivity"></activity>
 
         <activity
         android:name="com.sina.weibo.sdk.component.WeiboSdkBrowser"
